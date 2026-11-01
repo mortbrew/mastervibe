@@ -1,20 +1,20 @@
-# mastervibes
+# mastervibe
 
 A turn-based roguelike for the terminal, built on Mastermind code-breaking with a hacker theme.
 
 You probe a hidden code. Pegs tell you which symbols are exact and which are only near. The shape of your probe — a pair, a palindrome, a full lock — is its signature, and that signature is what pays. Points are bits times amp. A run is eight layers of three breaches each. Tools from the shop change what a probe is worth and what you know before you guess.
 
-This tree is the v0.1.0 rules core: a library with no UI, plus a stub binary. The terminal comes in a later step.
+This tree is v0.1.0: the rules core, and a terminal UI that drives it. The UI never reads the secret.
 
 ## Layout
 
 | Path | What it is |
 | --- | --- |
-| `crates/mastervibes-core` | Seeds, code generation, pegs, signatures, scoring, the run loop, tools, the shop |
-| `crates/mastervibes` | Binary stub. It links the core and prints one example secret |
-| `crates/mastervibes-core/data/signatures.toml` | Signature payouts and peg rates |
-| `crates/mastervibes-core/data/run.toml` | Layer budgets and targets, crack bonus, payouts, shop |
-| `crates/mastervibes-core/data/tools.toml` | The default-rig tool list |
+| `crates/mastervibe-core` | Seeds, code generation, pegs, signatures, scoring, the run loop, tools, the shop |
+| `crates/mastervibe` | Terminal UI. It draws the run and calls the core |
+| `crates/mastervibe-core/data/signatures.toml` | Signature payouts and peg rates |
+| `crates/mastervibe-core/data/run.toml` | Layer budgets and targets, crack bonus, payouts, shop |
+| `crates/mastervibe-core/data/tools.toml` | The default-rig tool list |
 
 The core crate does not depend on a terminal library. Signature numbers are loaded from TOML; the detectors that recognize a pattern stay in code.
 
@@ -50,12 +50,22 @@ Ascending means strictly increasing symbol indexes. A palindrome reads the same 
 
 **Fairness.** A drawn secret is thrown back onto the same PRNG stream when one symbol appears more than twice, or when the built-in solver cannot crack it inside the probe budget. The solver always guesses the lexicographically smallest code still consistent with the pegs. `count_consistent` answers how many secrets still fit the feedback so far.
 
+## Play
+
+```bash
+cargo run -p mastervibe
+```
+
+The terminal needs at least 80×24. A new run draws a random seed. Enter a seed such as `MV-7F3A-9C21-L4` to replay that key. The layer in the seed is a share mark; the run still starts at layer 1.
+
+Keys are on the footer. `q` asks before quitting. `?` explains pegs, signatures, and scoring. Type a symbol with `0`–`7` (only the glyphs this layer has), backspace to undo, enter to probe. An absent symbol is grey, and the game asks before you submit a probe that contains one, because that probe scores 0. In the shop, `1` and `2` buy, `r` rerolls, `s` then `1`–`5` sells, and `n` starts the next breach.
+
 ## Develop
 
 ```bash
 cargo test
 cargo clippy -- -D warnings
-cargo run -p mastervibes
+cargo run -p mastervibe
 ```
 
 Licensed under MIT. See [LICENSE](LICENSE).

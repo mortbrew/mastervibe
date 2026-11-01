@@ -1,0 +1,32 @@
+[package]
+name = "mastervibe"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+description = "Terminal UI for the mastervibe code-breaking roguelike."
+publish = false
+
+[lib]
+name = "mastervibe"
+path = "src/lib.rs"
+
+[[bin]]
+name = "mastervibe"
+path = "src/main.rs"
+
+[dependencies]
+mastervibe-core = { path = "../mastervibe-core" }
+crossterm = "=0.28.1"
+ratatui = "=0.28.1"
+rand = "0.8.5"
+unicode-width = "=0.2.0"
+# ratatui 0.28 resolves these to releases that need Rust 1.85+. Pin the
+# newest builds this toolchain (1.83) can compile.
+instability = "=0.3.10"
+unicode-segmentation = "=1.12.0"
+darling = "=0.21.3"
+
+[lints]
+workspace = true

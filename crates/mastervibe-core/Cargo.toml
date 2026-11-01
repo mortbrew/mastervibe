@@ -1,10 +1,11 @@
 [package]
-name = "mastervibes-core"
+name = "mastervibe-core"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 authors.workspace = true
-description = "Rules core for the mastervibes code-breaking roguelike."
+repository.workspace = true
+description = "Rules core for the mastervibe code-breaking roguelike."
 publish = false
 
 [dependencies]

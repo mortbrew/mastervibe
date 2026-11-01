@@ -1,6 +1,6 @@
 //! Public-API walkthrough of one breach on a shared seed.
 
-use mastervibes_core::{
+use mastervibe_core::{
     count_consistent, embedded_catalog, generate_secret, is_consistent, score_pegs, score_probe,
     Amp, Breach, BreachStatus, Code, Observation, RunSeed, ScoreHook, ScoreLineKind, ToolMod,
 };
