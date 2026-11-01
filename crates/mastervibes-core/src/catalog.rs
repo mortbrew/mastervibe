@@ -26,8 +26,19 @@ pub struct Signature {
     pub bits: i32,
     /// Amp bonus added to the pipeline's base amp.
     pub amp: Amp,
-    /// Highest priority wins when several patterns match.
+    /// Tie-break when two matching rows have the same [`Self::selection_milli`].
+    /// Higher priority wins.
     pub priority: i32,
+}
+
+impl Signature {
+    /// `bits × (1 + amp)`, in thousandths.
+    ///
+    /// Detection keeps the matching row with the highest value. `28 × 2.5`
+    /// is `70000`.
+    pub fn selection_milli(&self) -> i64 {
+        i64::from(self.bits).saturating_mul(1_000 + i64::from(self.amp.milli()))
+    }
 }
 
 /// Peg rates and the amp a probe starts from. Loaded from `[scoring]`.
@@ -43,6 +54,8 @@ pub struct ScoringRules {
     pub near_bits: i32,
     /// Amp added per near.
     pub near_amp: Amp,
+    /// Amp added for each pair of side-by-side exacts.
+    pub neighbour_amp: Amp,
 }
 
 /// Loaded signature table plus the scoring rates.
@@ -114,8 +127,14 @@ impl Catalog {
             }
         }
 
-        // Highest priority first, so detection returns on the first match.
-        signatures.sort_by(|left, right| right.priority.cmp(&left.priority));
+        // Best selection value first, so detection returns on the first match.
+        // Priority breaks ties.
+        signatures.sort_by(|left, right| {
+            right
+                .selection_milli()
+                .cmp(&left.selection_milli())
+                .then(right.priority.cmp(&left.priority))
+        });
         let by_id = signatures
             .iter()
             .enumerate()
@@ -134,7 +153,7 @@ impl Catalog {
         self.scoring
     }
 
-    /// Rows, highest priority first.
+    /// Rows, highest [`Signature::selection_milli`] first.
     pub fn signatures(&self) -> &[Signature] {
         &self.signatures
     }
@@ -144,7 +163,8 @@ impl Catalog {
         self.by_id.get(id).map(|&index| &self.signatures[index])
     }
 
-    /// The signature this probe earns.
+    /// The signature this probe earns: the matching row with the highest
+    /// [`Signature::selection_milli`].
     ///
     /// Every probe matches exactly one frequency pattern, and a loaded catalog
     /// has a row for each of them, so this always resolves.
@@ -212,12 +232,14 @@ fn parse_rules(raw: &RawScoring) -> Result<ScoringRules, CatalogError> {
     }
     let hit_amp = non_negative_amp("hit_amp", raw.hit_amp)?;
     let near_amp = non_negative_amp("near_amp", raw.near_amp)?;
+    let neighbour_amp = non_negative_amp("neighbour_amp", raw.neighbour_amp)?;
     Ok(ScoringRules {
         base_amp,
         hit_bits: raw.hit_bits,
         hit_amp,
         near_bits: raw.near_bits,
         near_amp,
+        neighbour_amp,
     })
 }
 
@@ -236,18 +258,7 @@ fn non_negative_amp(field: &str, value: f64) -> Result<Amp, CatalogError> {
 }
 
 fn parse_amp(value: f64) -> Result<Amp, String> {
-    if !value.is_finite() {
-        return Err("amp must be finite".to_string());
-    }
-    if !(-1_000_000.0..=1_000_000.0).contains(&value) {
-        return Err("amp is out of range".to_string());
-    }
-    let milli = (value * 1000.0).round();
-    if (milli / 1000.0 - value).abs() > 1e-4 {
-        return Err("amp must be a multiple of 0.001".to_string());
-    }
-    let milli = i32::try_from(milli as i64).map_err(|_| "amp is out of range".to_string())?;
-    Ok(Amp::from_milli(milli))
+    crate::amp::parse_amp(value)
 }
 
 #[derive(Debug, Deserialize)]
@@ -265,6 +276,7 @@ struct RawScoring {
     hit_amp: f64,
     near_bits: i32,
     near_amp: f64,
+    neighbour_amp: f64,
 }
 
 #[derive(Debug, Deserialize)]
@@ -316,10 +328,17 @@ mod tests {
         }
         let rules = catalog.scoring();
         assert_eq!(rules.base_amp, Amp::ONE);
-        assert_eq!(rules.hit_bits, 5);
-        assert_eq!(rules.hit_amp, Amp::from_milli(250));
-        assert_eq!(rules.near_bits, 2);
+        assert_eq!(rules.hit_bits, 10);
+        assert_eq!(rules.hit_amp, Amp::ZERO);
+        assert_eq!(rules.near_bits, 4);
         assert_eq!(rules.near_amp, Amp::ZERO);
+        assert_eq!(rules.neighbour_amp, Amp::ONE);
+
+        let mut best = i64::MAX;
+        for row in catalog.signatures() {
+            assert!(row.selection_milli() <= best);
+            best = row.selection_milli();
+        }
 
         let mut rows: Vec<_> = catalog.signatures().to_vec();
         rows.sort_by_key(|row| row.priority);
@@ -330,7 +349,7 @@ mod tests {
     }
 
     #[test]
-    fn detection_uses_priority_from_the_table() {
+    fn detection_picks_the_highest_bits_times_one_plus_amp() {
         let catalog = embedded_catalog();
         assert_eq!(catalog.detect(&code("0132")).id, "all_unique");
         assert_eq!(catalog.detect(&code("0123")).id, "ascending");
@@ -346,16 +365,21 @@ mod tests {
         assert_eq!(catalog.detect(&code("001122")).id, "two_pair");
         assert_eq!(catalog.detect(&code("000111")).id, "triple");
 
-        // Drop Palindrome under Two Pair and ABBA stops being a palindrome payout.
+        // Palindrome still beats Two Pair on value (70 > 62.5) even if its
+        // priority is lowered. Dropping its bits is what hands ABBA to Two Pair.
         let mut text = include_str!("../data/signatures.toml").to_string();
         text = text.replace(
             "id = \"palindrome\"\nname = \"Palindrome\"\nbits = 28\namp = 1.5\npriority = 50",
-            "id = \"palindrome\"\nname = \"Palindrome\"\nbits = 28\namp = 1.5\npriority = 5",
+            "id = \"palindrome\"\nname = \"Palindrome\"\nbits = 10\namp = 0.0\npriority = 95",
         );
         let custom = Catalog::from_toml(&text).unwrap();
         assert_eq!(catalog.detect(&code("01210")).id, "palindrome");
         assert_eq!(custom.detect(&code("0110")).id, "two_pair");
         assert_eq!(custom.detect(&code("01210")).id, "two_pair");
+        // Priority 95 would have won under the old rule. Value 10 does not.
+        assert!(
+            custom.get("palindrome").unwrap().priority > custom.get("two_pair").unwrap().priority
+        );
     }
 
     #[test]
@@ -385,10 +409,11 @@ mod tests {
         let missing = r#"
             [scoring]
             base_amp = 1.0
-            hit_bits = 5
-            hit_amp = 0.25
-            near_bits = 2
+            hit_bits = 10
+            hit_amp = 0.0
+            near_bits = 4
             near_amp = 0.0
+            neighbour_amp = 1.0
             [[signature]]
             id = "pair"
             name = "Pair"

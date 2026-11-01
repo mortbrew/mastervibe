@@ -45,8 +45,22 @@ pub struct RunPlan {
 /// `Pcg32::seed_from_u64((key << 8) | layer)`.
 pub fn generate_secret(seed: RunSeed) -> GeneratedCode {
     let spec = LayerSpec::for_layer(seed.layer()).expect("RunSeed only holds layers 1..=8");
-    let mut rng = Pcg32::seed_from_u64(stream_seed(seed.key(), seed.layer()));
-    generate_from_draws(spec, || draw_code(&mut rng, spec))
+    let mut rng = layer_stream(seed.key(), seed.layer());
+    draw_secret(&mut rng, spec)
+}
+
+/// The PCG stream a layer's secrets are drawn from.
+///
+/// The first [`draw_secret`] from this stream is [`generate_secret`] for that
+/// layer. Later draws are the next breaches of the same layer, still on this
+/// stream, so a share code keeps reproducing breach 1.
+pub fn layer_stream(key: u32, layer: u8) -> Pcg32 {
+    Pcg32::seed_from_u64(stream_seed(key, layer))
+}
+
+/// Draw the next fair secret from a layer stream opened by [`layer_stream`].
+pub fn draw_secret(rng: &mut impl Rng, spec: LayerSpec) -> GeneratedCode {
+    generate_from_draws(spec, || draw_code(rng, spec))
 }
 
 /// Draw every layer of `key`. Layer *n* matches [`generate_secret`] for that layer.
@@ -176,7 +190,7 @@ mod tests {
             .collect::<Vec<_>>();
         assert_eq!(
             glyphs,
-            ["4114", "2121", "5441", "56041", "10244", "46142", "750562", "176541",]
+            ["4114", "2121", "5441", "56041", "10244", "46142", "452511", "204301",]
         );
     }
 

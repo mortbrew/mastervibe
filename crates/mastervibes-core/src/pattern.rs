@@ -20,8 +20,8 @@
 //! * `ascending` — each next slot's symbol index is strictly greater
 //! * `palindrome` — the probe reads the same forwards and backwards
 //!
-//! The catalog picks the matching row with the highest priority, so a probe
-//! still has one signature.
+//! The catalog picks the matching row with the highest `bits × (1 + amp)`,
+//! so a probe still has one signature. Priority only breaks a tie.
 
 use crate::code::{Code, MAX_SYMBOLS};
 

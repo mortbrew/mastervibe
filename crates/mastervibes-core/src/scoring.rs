@@ -3,11 +3,15 @@
 //! Order, always:
 //!
 //! 1. Start from the catalog's base amp.
-//! 2. Add the winning signature's bits and amp bonus.
-//! 3. Add hit and near contributions from the catalog rates.
-//! 4. Run tool hooks, each of which may read the probe and change the running
+//! 2. If the probe plays a symbol already shown to be absent, skip the
+//!    signature and the pegs. The probe's own score is zero; tool hooks still
+//!    run, which is how a tool can pay for that probe anyway.
+//! 3. Otherwise add the winning signature's bits and amp bonus.
+//! 4. Add exact and near contributions from the catalog rates, then neighbour
+//!    amp for each pair of side-by-side exacts.
+//! 5. Run tool hooks, each of which may read the probe and change the running
 //!    totals (add, replace, or multiply).
-//! 5. Clamp bits and amp at zero.
+//! 6. Clamp bits and amp at zero.
 //!
 //! `total_milli` is `bits × amp_milli`, so a score of 62.5 is stored as
 //! `62500`. Divide by 1000 for the player-facing number.
@@ -106,6 +110,14 @@ pub enum ScoreLineKind {
         /// How many nears the probe scored.
         count: u8,
     },
+    /// `pairs` side-by-side exacts, at the catalog's neighbour amp.
+    Neighbours {
+        /// Adjacent exact pairs.
+        pairs: u8,
+    },
+    /// The probe played a symbol already shown to be absent, so the signature
+    /// and the pegs paid nothing.
+    Dead,
     /// A tool hook. `bits` / `amp` on the line are the net change it caused.
     Tool {
         /// [`ScoreHook::id`] of the hook.
@@ -142,13 +154,29 @@ impl ScoreBreakdown {
 /// Score `probe` given the pegs it already earned.
 ///
 /// `hooks` run in order after the signature and peg lines. Pass `&[]` when
-/// nothing is modifying the probe.
+/// nothing is modifying the probe. No symbol is treated as absent; use
+/// [`score_probe_with_dead`] when the breach has already shown some absent.
 pub fn score_probe(
     probe: &Code,
     pegs: Pegs,
     catalog: &Catalog,
     layer: Option<LayerSpec>,
     hooks: &[&dyn ScoreHook],
+) -> ScoreBreakdown {
+    score_probe_with_dead(probe, pegs, catalog, layer, hooks, 0)
+}
+
+/// [`score_probe`], plus symbols already shown to be absent.
+///
+/// Bit `i` of `dead_mask` means symbol index `i` is dead. A probe that plays
+/// one scores none of its signature or pegs. Hooks still run.
+pub fn score_probe_with_dead(
+    probe: &Code,
+    pegs: Pegs,
+    catalog: &Catalog,
+    layer: Option<LayerSpec>,
+    hooks: &[&dyn ScoreHook],
+    dead_mask: u8,
 ) -> ScoreBreakdown {
     let signature = catalog.detect(probe);
     let rules = catalog.scoring();
@@ -159,6 +187,10 @@ pub fn score_probe(
         layer,
         catalog,
     };
+    let dead = probe
+        .as_slice()
+        .iter()
+        .any(|symbol| dead_mask & (1 << symbol) != 0);
 
     let mut running = RunningScore {
         bits: 0,
@@ -173,30 +205,10 @@ pub fn score_probe(
         0,
         rules.base_amp,
     );
-    push(
-        &mut lines,
-        &mut running,
-        ScoreLineKind::Signature,
-        signature.bits,
-        signature.amp,
-    );
-    if pegs.hits > 0 {
-        push(
-            &mut lines,
-            &mut running,
-            ScoreLineKind::Hits { count: pegs.hits },
-            rules.hit_bits.saturating_mul(i32::from(pegs.hits)),
-            Amp::from_milli(rules.hit_amp.milli().saturating_mul(i32::from(pegs.hits))),
-        );
-    }
-    if pegs.nears > 0 {
-        push(
-            &mut lines,
-            &mut running,
-            ScoreLineKind::Nears { count: pegs.nears },
-            rules.near_bits.saturating_mul(i32::from(pegs.nears)),
-            Amp::from_milli(rules.near_amp.milli().saturating_mul(i32::from(pegs.nears))),
-        );
+    if dead {
+        push(&mut lines, &mut running, ScoreLineKind::Dead, 0, Amp::ZERO);
+    } else {
+        push_signature_and_pegs(&mut lines, &mut running, signature, pegs, rules);
     }
 
     for hook in hooks {
@@ -241,6 +253,50 @@ pub fn score_probe(
     }
 }
 
+fn push_signature_and_pegs(
+    lines: &mut Vec<ScoreLine>,
+    running: &mut RunningScore,
+    signature: &Signature,
+    pegs: Pegs,
+    rules: crate::catalog::ScoringRules,
+) {
+    push(
+        lines,
+        running,
+        ScoreLineKind::Signature,
+        signature.bits,
+        signature.amp,
+    );
+    if pegs.hits > 0 {
+        push(
+            lines,
+            running,
+            ScoreLineKind::Hits { count: pegs.hits },
+            rules.hit_bits.saturating_mul(i32::from(pegs.hits)),
+            Amp::from_milli(rules.hit_amp.milli().saturating_mul(i32::from(pegs.hits))),
+        );
+    }
+    if pegs.nears > 0 {
+        push(
+            lines,
+            running,
+            ScoreLineKind::Nears { count: pegs.nears },
+            rules.near_bits.saturating_mul(i32::from(pegs.nears)),
+            Amp::from_milli(rules.near_amp.milli().saturating_mul(i32::from(pegs.nears))),
+        );
+    }
+    let pairs = pegs.adjacent_exact_pairs();
+    if pairs > 0 {
+        push(
+            lines,
+            running,
+            ScoreLineKind::Neighbours { pairs },
+            0,
+            Amp::from_milli(rules.neighbour_amp.milli().saturating_mul(i32::from(pairs))),
+        );
+    }
+}
+
 fn push(
     lines: &mut Vec<ScoreLine>,
     running: &mut RunningScore,
@@ -268,13 +324,7 @@ mod tests {
     #[test]
     fn all_unique_whiff_is_base_bits_times_base_amp() {
         let catalog = embedded_catalog();
-        let score = score_probe(
-            &code("0132"),
-            Pegs { hits: 0, nears: 0 },
-            catalog,
-            None,
-            &[],
-        );
+        let score = score_probe(&code("0132"), Pegs::counts(0, 0), catalog, None, &[]);
         assert_eq!(score.signature_id, "all_unique");
         assert_eq!(score.bits, 10);
         assert_eq!(score.amp, Amp::ONE);
@@ -285,20 +335,24 @@ mod tests {
     #[test]
     fn pair_with_pegs_adds_hit_and_near_rates() {
         let catalog = embedded_catalog();
-        // bits = 15 + 5×2 + 2×1 = 27
-        // amp  = 1 + 1 + 0.25×2 = 2.5
-        // score = 67.5
+        // bits = 15 + 10×2 exacts + 4×1 near = 39
+        // amp  = 1 + 1 signature + 1 neighbour (exacts in slots 0 and 1) = 3
+        // score = 117
         let score = score_probe(
             &code("0012"),
-            Pegs { hits: 2, nears: 1 },
+            Pegs {
+                hits: 2,
+                nears: 1,
+                exact_mask: 0b0011,
+            },
             catalog,
             None,
             &[],
         );
         assert_eq!(score.signature_id, "pair");
-        assert_eq!(score.bits, 27);
-        assert_eq!(score.amp, Amp::from_milli(2500));
-        assert_eq!(score.total_milli, 67_500);
+        assert_eq!(score.bits, 39);
+        assert_eq!(score.amp, Amp::from_milli(3000));
+        assert_eq!(score.total_milli, 117_000);
         let summed_bits: i32 = score.lines.iter().map(|line| line.bits).sum();
         let summed_amp: i32 = score.lines.iter().map(|line| line.amp.milli()).sum();
         assert_eq!(summed_bits, score.bits);
@@ -328,13 +382,7 @@ mod tests {
         };
         let bonus = PairBonus;
         let hooks: [&dyn ScoreHook; 2] = [&bonus, &spike];
-        let score = score_probe(
-            &code("0012"),
-            Pegs { hits: 0, nears: 0 },
-            catalog,
-            None,
-            &hooks,
-        );
+        let score = score_probe(&code("0012"), Pegs::counts(0, 0), catalog, None, &hooks);
         // signature: 15 bits, amp 2.0
         // pair bonus: +7 bits, amp ×2 → 4.0
         // spike: +3 bits, +0.5 amp → 25 bits, amp 4.5
@@ -351,20 +399,14 @@ mod tests {
     fn rates_come_from_the_catalog_not_from_constants() {
         let mut text = include_str!("../data/signatures.toml").to_string();
         text = text.replace("bits = 15", "bits = 100");
-        text = text.replace("hit_bits = 5", "hit_bits = 1");
+        text = text.replace("hit_bits = 10", "hit_bits = 1");
         text = text.replace("near_amp = 0.0", "near_amp = 0.5");
         let catalog = Catalog::from_toml(&text).unwrap();
-        let score = score_probe(
-            &code("0012"),
-            Pegs { hits: 1, nears: 1 },
-            &catalog,
-            None,
-            &[],
-        );
-        // bits = 100 + 1 hit + 2 near = 103
-        // amp = 1 + 1 + 0.25 hit + 0.5 near = 2.75
-        assert_eq!(score.bits, 103);
-        assert_eq!(score.amp, Amp::from_milli(2750));
+        let score = score_probe(&code("0012"), Pegs::counts(1, 1), &catalog, None, &[]);
+        // bits = 100 + 1 exact + 4 near = 105
+        // amp = 1 + 1 signature + 0.5 near = 2.5 (no exact mask, so no neighbour)
+        assert_eq!(score.bits, 105);
+        assert_eq!(score.amp, Amp::from_milli(2500));
     }
 
     #[test]
@@ -376,13 +418,7 @@ mod tests {
             amp: Amp::from_milli(-10_000),
         };
         let hooks: [&dyn ScoreHook; 1] = [&sink];
-        let score = score_probe(
-            &code("0132"),
-            Pegs { hits: 0, nears: 0 },
-            catalog,
-            None,
-            &hooks,
-        );
+        let score = score_probe(&code("0132"), Pegs::counts(0, 0), catalog, None, &hooks);
         assert_eq!(score.bits, 0);
         assert_eq!(score.amp, Amp::ZERO);
         assert_eq!(score.total_milli, 0);

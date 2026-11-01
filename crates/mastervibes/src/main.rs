@@ -8,7 +8,7 @@ fn main() {
     let seed = RunSeed::parse("MV-7F3A-9C21-L4").expect("built-in example seed");
     let secret = generate_secret(seed);
     println!("mastervibes {}", env!("CARGO_PKG_VERSION"));
-    println!("rules core online — terminal UI is a later step");
+    println!("rules core online — run loop included, terminal UI is a later step");
     println!(
         "example {seed} → layer {} code {code} (fair: {fair})",
         secret.spec.layer(),

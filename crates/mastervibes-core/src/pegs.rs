@@ -4,23 +4,73 @@
 //! symbol in the wrong slot. Each secret symbol is matched at most once, and
 //! hits are taken before nears, so duplicate probes cannot invent extra pegs.
 
+use std::hash::{Hash, Hasher};
+
 use thiserror::Error;
 
 use crate::code::{Code, MAX_SYMBOLS};
 
 /// Feedback for one probe.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+///
+/// Equality and hashing use the counts only. `exact_mask` says which slots
+/// were exact, which neighbour amp needs, but a player is told the counts.
+#[derive(Clone, Copy, Debug)]
 pub struct Pegs {
-    /// Right symbol, right slot.
+    /// Right symbol, right slot. An exact.
     pub hits: u8,
     /// Right symbol, wrong slot.
     pub nears: u8,
+    /// Bit `i` is set when slot `i` is an exact.
+    pub exact_mask: u8,
+}
+
+impl PartialEq for Pegs {
+    fn eq(&self, other: &Self) -> bool {
+        self.hits == other.hits && self.nears == other.nears
+    }
+}
+
+impl Eq for Pegs {}
+
+impl Hash for Pegs {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.hits.hash(state);
+        self.nears.hash(state);
+    }
 }
 
 impl Pegs {
-    /// Every slot is a hit, which is how a breach is cracked.
+    /// Peg counts with no exact slots recorded.
+    ///
+    /// Neighbour amp stays at zero until a mask is filled in. [`score_pegs`]
+    /// sets the mask.
+    pub fn counts(hits: u8, nears: u8) -> Self {
+        Self {
+            hits,
+            nears,
+            exact_mask: 0,
+        }
+    }
+
+    /// Every slot is an exact, which is how a breach is cracked.
     pub fn all_hits(self, slots: usize) -> bool {
         usize::from(self.hits) == slots && self.nears == 0
+    }
+
+    /// Whether slot `slot` is an exact.
+    pub fn exact_at(self, slot: usize) -> bool {
+        slot < 8 && (self.exact_mask & (1 << slot)) != 0
+    }
+
+    /// Pairs of side-by-side exacts. Three exacts in a row are two pairs.
+    pub fn adjacent_exact_pairs(self) -> u8 {
+        let mut pairs = 0u8;
+        for slot in 0..7 {
+            if self.exact_at(slot) && self.exact_at(slot + 1) {
+                pairs += 1;
+            }
+        }
+        pairs
     }
 }
 
@@ -62,11 +112,13 @@ pub(crate) fn score_slots(secret: &[u8], probe: &[u8]) -> Pegs {
     debug_assert_eq!(secret.len(), probe.len());
     let slots = secret.len();
     let mut hits = 0u8;
+    let mut exact_mask = 0u8;
     let mut secret_counts = [0u8; MAX_SYMBOLS];
     let mut probe_counts = [0u8; MAX_SYMBOLS];
-    for (&secret_symbol, &probe_symbol) in secret.iter().zip(probe.iter()) {
+    for (slot, (&secret_symbol, &probe_symbol)) in secret.iter().zip(probe.iter()).enumerate() {
         if secret_symbol == probe_symbol {
             hits += 1;
+            exact_mask |= 1 << slot;
         } else {
             secret_counts[usize::from(secret_symbol)] += 1;
             probe_counts[usize::from(probe_symbol)] += 1;
@@ -78,7 +130,11 @@ pub(crate) fn score_slots(secret: &[u8], probe: &[u8]) -> Pegs {
     }
     debug_assert!(usize::from(hits) + usize::from(nears) <= slots);
     debug_assert!(slots < 2 || hits != (slots as u8) - 1 || nears != 1);
-    Pegs { hits, nears }
+    Pegs {
+        hits,
+        nears,
+        exact_mask,
+    }
 }
 
 #[cfg(test)]
@@ -107,11 +163,8 @@ mod tests {
         ];
         for (secret, probe, hits, nears) in cases {
             let pegs = score_pegs(&code(secret), &code(probe)).unwrap();
-            assert_eq!(
-                pegs,
-                Pegs { hits, nears },
-                "{secret} vs {probe} scored {pegs}"
-            );
+            assert_eq!(pegs.hits, hits, "{secret} vs {probe} hits");
+            assert_eq!(pegs.nears, nears, "{secret} vs {probe} nears");
         }
     }
 
@@ -128,6 +181,19 @@ mod tests {
     }
 
     #[test]
+    fn adjacent_exacts_count_overlapping_pairs() {
+        let pegs = score_pegs(&code("0123"), &code("0123")).unwrap();
+        assert_eq!(pegs.exact_mask, 0b1111);
+        assert_eq!(pegs.adjacent_exact_pairs(), 3);
+        let split = score_pegs(&code("0123"), &code("0132")).unwrap();
+        // slots 0 and 1 match; 2 and 3 are swapped
+        assert_eq!(split.hits, 2);
+        assert_eq!(split.exact_mask, 0b0011);
+        assert_eq!(split.adjacent_exact_pairs(), 1);
+        assert_eq!(Pegs::counts(2, 1).adjacent_exact_pairs(), 0);
+    }
+
+    #[test]
     fn reference_marker_algorithm_agrees_on_every_4x6_pair() {
         let symbols = 6u8;
         let slots = 4usize;
@@ -141,6 +207,7 @@ mod tests {
                 assert_eq!((pegs.hits, pegs.nears), (hits, nears));
                 let flipped = score_slots(&probe, &secret);
                 assert_eq!(pegs, flipped);
+                assert_eq!(pegs.exact_mask, flipped.exact_mask);
                 let impossible = pegs.hits == (slots as u8) - 1 && pegs.nears == 1;
                 assert!(!impossible);
                 assert!(usize::from(pegs.hits) + usize::from(pegs.nears) <= slots);

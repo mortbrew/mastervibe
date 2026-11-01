@@ -68,6 +68,21 @@ impl fmt::Display for Amp {
     }
 }
 
+pub(crate) fn parse_amp(value: f64) -> Result<Amp, String> {
+    if !value.is_finite() {
+        return Err("amp must be finite".to_string());
+    }
+    if !(-1_000_000.0..=1_000_000.0).contains(&value) {
+        return Err("amp is out of range".to_string());
+    }
+    let milli = (value * 1000.0).round();
+    if (milli / 1000.0 - value).abs() > 1e-4 {
+        return Err("amp must be a multiple of 0.001".to_string());
+    }
+    let milli = i32::try_from(milli as i64).map_err(|_| "amp is out of range".to_string())?;
+    Ok(Amp::from_milli(milli))
+}
+
 fn clamp_i64_to_i32(value: i64) -> i32 {
     if value > i64::from(i32::MAX) {
         i32::MAX

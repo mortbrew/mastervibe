@@ -1,22 +1,25 @@
 # Probe signatures and the bits × amp rates.
 #
-# A probe earns one signature: the matching row with the highest priority.
-# Which patterns match is decided in code. Every number in this file is data,
-# so a later pass can retune payouts without touching the detectors.
+# A probe earns one signature: the matching row with the highest
+# bits × (1 + amp). Which patterns match is decided in code. Every number
+# in this file is data, so a later pass can retune payouts without touching
+# the detectors.
 #
 # `amp` on a signature is a bonus added to [scoring].base_amp (All Unique's
 # "+0" means the multiplier stays at the base). Score = bits × amp.
+# `priority` breaks ties when two rows have the same bits × (1 + amp).
 
 [scoring]
 base_amp = 1.0
-# Each hit is a cracked slot. 0.25 amp × 4 hits is a full extra multiplier.
-hit_bits = 5
-hit_amp = 0.25
-near_bits = 2
+# An exact is a cracked slot. Neighbour amp pays each pair of side-by-side exacts.
+hit_bits = 10
+hit_amp = 0.0
+near_bits = 4
 near_amp = 0.0
+neighbour_amp = 1.0
 
 # Frequency patterns, common to rare, then the shape patterns inserted where
-# their payout sits. Priorities are unique so detection has no ties.
+# their payout sits. Priorities are unique so a value tie still has a winner.
 
 [[signature]]
 id = "all_unique"
