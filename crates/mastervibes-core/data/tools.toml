@@ -1,0 +1,291 @@
+# Default-rig tools for the lowest difficulty.
+# Names, prices, and effects are taken from the design catalog.
+# Effect kinds are score, crack, info, budget, and economy.
+# A symbol's value is its index plus one, so glyph 6 is value 7 and glyph 7 is value 8.
+# Par is the layer's slot count. "Under par" means fewer probes than that.
+
+[[tool]]
+id = "packet_sniffer"
+name = "Packet Sniffer"
+archetype = "recon"
+rarity = "C"
+price = 4
+summary = "Reveal 1 random slot at breach start."
+
+[[tool.effect]]
+kind = "info"
+action = "reveal_random"
+count = 1
+
+[[tool]]
+id = "var_log"
+name = "/var/log"
+archetype = "recon"
+rarity = "C"
+price = 4
+summary = "After probe 1, name 1 symbol not in the code."
+
+[[tool.effect]]
+kind = "info"
+action = "name_absent"
+after_probe = 1
+count = 1
+
+[[tool]]
+id = "keylogger"
+name = "Keylogger"
+archetype = "recon"
+rarity = "C"
+price = 3
+summary = "Shows whether the code contains a repeated symbol."
+
+[[tool.effect]]
+kind = "info"
+action = "show_repeat"
+
+[[tool]]
+id = "shoulder_surf"
+name = "Shoulder Surf"
+archetype = "recon"
+rarity = "C"
+price = 4
+summary = "Reveal the symbol in slot 1."
+
+[[tool.effect]]
+kind = "info"
+action = "reveal_slot"
+slot = 1
+
+[[tool]]
+id = "zero_day"
+name = "Zero-Day"
+archetype = "speed"
+rarity = "U"
+price = 6
+summary = "Crack bonus ×2 if cracked at or under par."
+
+[[tool.effect]]
+kind = "crack"
+when = "at_or_under_par"
+mul = 2.0
+
+[[tool]]
+id = "overclock"
+name = "Overclock"
+archetype = "speed"
+rarity = "C"
+price = 4
+summary = "Probe 1 scores ×3."
+
+[[tool.effect]]
+kind = "score"
+when = "probe"
+probe = 1
+mul_amp = 3.0
+
+[[tool]]
+id = "speedrun"
+name = "Speedrun.sh"
+archetype = "speed"
+rarity = "U"
+price = 6
+summary = "Cracking probe +0.5 amp per probe under par."
+
+[[tool.effect]]
+kind = "score"
+when = "cracking_per_under_par"
+add_amp = 0.5
+
+[[tool]]
+id = "null_route"
+name = "Null Route"
+archetype = "grind"
+rarity = "C"
+price = 4
+summary = "+20 bits on your first blank probe each breach."
+
+[[tool.effect]]
+kind = "score"
+when = "first_blank"
+add_bits = 20
+
+[[tool]]
+id = "brute_force"
+name = "Brute Force"
+archetype = "grind"
+rarity = "U"
+price = 6
+summary = "+2 probes (these do not count for the crack bonus); +0.5 amp on probes after par."
+
+[[tool.effect]]
+kind = "budget"
+extra_probes = 2
+
+[[tool.effect]]
+kind = "score"
+when = "after_par"
+add_amp = 0.5
+
+[[tool]]
+id = "slow_burn"
+name = "Slow Burn"
+archetype = "grind"
+rarity = "C"
+price = 4
+summary = "Probes after par +12 bits."
+
+[[tool.effect]]
+kind = "score"
+when = "after_par"
+add_bits = 12
+
+[[tool]]
+id = "shadow"
+name = "Shadow"
+archetype = "pegs"
+rarity = "C"
+price = 4
+summary = "+1 amp per near peg."
+
+[[tool.effect]]
+kind = "score"
+when = "per_near"
+add_amp = 1.0
+
+[[tool]]
+id = "precision"
+name = "Precision"
+archetype = "pegs"
+rarity = "U"
+price = 6
+summary = "×1.75 amp if the probe has 2 or more exacts."
+
+[[tool.effect]]
+kind = "score"
+when = "min_exacts"
+exacts = 2
+mul_amp = 1.75
+
+[[tool]]
+id = "daisy_chain"
+name = "Daisy Chain"
+archetype = "pegs"
+rarity = "U"
+price = 6
+summary = "Side-by-side exacts give +1.5 amp per pair instead of +1."
+
+[[tool.effect]]
+kind = "score"
+when = "per_adjacent_exact"
+add_amp = 0.5
+
+[[tool]]
+id = "bullseye"
+name = "Bullseye"
+archetype = "pegs"
+rarity = "C"
+price = 4
+summary = "+10 bits per exact in the first or last slot."
+
+[[tool.effect]]
+kind = "score"
+when = "per_edge_exact"
+add_bits = 10
+
+[[tool]]
+id = "ascii_art"
+name = "ASCII Art"
+archetype = "symbols"
+rarity = "C"
+price = 3
+summary = "+6 bits if probe symbol values ascend left to right."
+
+[[tool.effect]]
+kind = "score"
+when = "ascending"
+add_bits = 6
+
+[[tool]]
+id = "repeater"
+name = "Repeater"
+archetype = "symbols"
+rarity = "C"
+price = 4
+summary = "+4 bits per repeated symbol in the probe."
+
+[[tool.effect]]
+kind = "score"
+when = "per_repeat"
+add_bits = 4
+
+[[tool]]
+id = "high_value"
+name = "High Value"
+archetype = "symbols"
+rarity = "C"
+price = 3
+summary = "Symbols of value 7–8 give +5 bits."
+
+[[tool.effect]]
+kind = "score"
+when = "per_value"
+min_value = 7
+max_value = 8
+add_bits = 5
+
+[[tool]]
+id = "crypto_miner"
+name = "Crypto Miner"
+archetype = "economy"
+rarity = "C"
+price = 4
+summary = "+$1 per probe under par (cap $3)."
+
+[[tool.effect]]
+kind = "economy"
+action = "pay_under_par"
+dollars = 1
+cap = 3
+
+[[tool]]
+id = "cold_wallet"
+name = "Cold Wallet"
+archetype = "economy"
+rarity = "C"
+price = 4
+summary = "Interest cap +$2."
+
+[[tool.effect]]
+kind = "economy"
+action = "interest_cap"
+extra = 2
+
+[[tool]]
+id = "dark_web"
+name = "Dark Web"
+archetype = "economy"
+rarity = "C"
+price = 3
+summary = "Shop rerolls cost $1 less."
+
+[[tool.effect]]
+kind = "economy"
+action = "reroll_discount"
+dollars = 1
+
+[[tool]]
+id = "honeypot"
+name = "Honeypot"
+archetype = "wild"
+rarity = "U"
+price = 6
+summary = "One absent symbol is revealed; probing it once gives +30 bits instead of 0."
+
+[[tool.effect]]
+kind = "info"
+action = "honeypot"
+
+[[tool.effect]]
+kind = "score"
+when = "honeypot"
+add_bits = 30

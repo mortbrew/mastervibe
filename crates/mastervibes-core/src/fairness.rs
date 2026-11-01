@@ -98,17 +98,16 @@ mod tests {
 
     #[test]
     fn solver_bound_rejects_a_code_past_the_budget() {
-        // 4543 takes the lex solver 9 probes. The stock layer-1 budget is 10,
-        // so it is fair there; a tighter budget is what rejects it. Repeats
+        // 4543 takes the lex solver 9 probes. Stock layer 1 allows 8, so the
+        // solver bound rejects it. A budget of 10 still accepts it. Repeats
         // are in range (the symbol 4 appears twice), so this is the solver
         // check and not the repeat cap.
         let layer = LayerSpec::for_layer(1).unwrap();
-        assert!(is_fair(&code("4543"), layer));
-        let tight = layer.with_probe_budget(8);
         assert_eq!(
-            unfair_reason(&code("4543"), tight),
+            unfair_reason(&code("4543"), layer),
             Some(UnfairReason::Solver { budget: 8 })
         );
+        assert!(is_fair(&code("4543"), layer.with_probe_budget(10)));
         assert_eq!(
             unfair_reason(&code("0123"), layer.with_probe_budget(0)),
             Some(UnfairReason::Solver { budget: 0 })

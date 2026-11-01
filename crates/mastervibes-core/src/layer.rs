@@ -24,26 +24,31 @@ impl LayerSpec {
     ///
     /// | layers | slots | symbols | probe budget |
     /// | --- | --- | --- | --- |
-    /// | 1–3 | 4 | 6 | 10 |
-    /// | 4–6 | 5 | 7 | 12 |
-    /// | 7–8 | 6 | 8 | 14 |
+    /// | 1–3 | 4 | 6 | 8 |
+    /// | 4–6 | 5 | 7 | 7 |
+    /// | 7–8 | 6 | 8 | 7 |
     ///
-    /// A fair secret uses no symbol more than twice. That cap is part of the
-    /// spec so a test can tighten it without inventing a second config type.
+    /// Slots, charset size, probe budget, and the repeat cap are loaded from
+    /// `data/run.toml`. A fair secret uses no symbol more than
+    /// [`Self::max_repeat`] times (2 in that file).
     pub fn for_layer(layer: u8) -> Option<Self> {
-        let (slots, symbols, probe_budget) = match layer {
-            1..=3 => (4, 6, 10),
-            4..=6 => (5, 7, 12),
-            7..=8 => (6, 8, 14),
-            _ => return None,
-        };
-        Some(Self {
+        crate::rules::embedded_rules().layer_spec(layer)
+    }
+
+    pub(crate) fn from_parts(
+        layer: u8,
+        slots: u8,
+        symbols: u8,
+        probe_budget: u8,
+        max_repeat: u8,
+    ) -> Self {
+        Self {
             layer,
             slots,
             symbols,
             probe_budget,
-            max_repeat: 2,
-        })
+            max_repeat,
+        }
     }
 
     /// Layers 1 through 8, in order.
@@ -110,14 +115,14 @@ mod tests {
     #[test]
     fn sizes_follow_the_three_bands() {
         let cases = [
-            (1, 4, 6, 10),
-            (2, 4, 6, 10),
-            (3, 4, 6, 10),
-            (4, 5, 7, 12),
-            (5, 5, 7, 12),
-            (6, 5, 7, 12),
-            (7, 6, 8, 14),
-            (8, 6, 8, 14),
+            (1, 4, 6, 8),
+            (2, 4, 6, 8),
+            (3, 4, 6, 8),
+            (4, 5, 7, 7),
+            (5, 5, 7, 7),
+            (6, 5, 7, 7),
+            (7, 6, 8, 7),
+            (8, 6, 8, 7),
         ];
         for (layer, slots, symbols, budget) in cases {
             let spec = LayerSpec::for_layer(layer).unwrap();

@@ -1,0 +1,113 @@
+# Run structure, payouts, and layer targets for the default rig.
+# Every number the run loop uses lives here.
+
+[crack]
+# Cracked breach score = probe score × min(cap, 1 + per_unused × unused probes).
+# Unused probes are measured against the layer budget. Extra probes from tools
+# do not count. An uncracked breach keeps `uncracked_keep` of its probe score.
+per_unused = 0.3
+cap = 5.0
+uncracked_keep = 0.5
+
+[amp]
+# Tool ×amp effects multiply together, then stop at this cap.
+tool_mul_cap = 4.0
+
+[payout]
+# Base pay for the three breaches of a layer, then $1 per probe under par
+# (par = slots, and only when the breach was cracked in fewer probes than that).
+perimeter = 5
+internal = 6
+root = 7
+per_probe_under_par = 1
+# +$2 for each full extra time the layer score covers the target, capped.
+extra_target = 2
+extra_target_cap = 3
+
+[interest]
+# After the payout: $1 per `per` dollars held, up to `cap`.
+per = 5
+cap = 5
+
+[wallet]
+starting = 4
+
+[fairness]
+# A secret that repeats a symbol more than this is redrawn.
+max_repeat = 2
+
+[shop]
+offers = 2
+reroll = 5
+# Each further reroll in the same shop costs this much more.
+reroll_step = 1
+# Sell refund is price / sell_divisor, rounded down.
+sell_divisor = 2
+rig_slots = 5
+
+[shop.weight]
+C = 1
+U = 1
+R = 1
+L = 1
+
+# Eight layers, three breaches each (Perimeter, Internal, Root).
+# `target` is the layer score, in points, the three breach scores must reach
+# by the end of Root. Probe budget is 8 on layers 1–3 and 7 from layer 4.
+# Targets are set so the built-in lex bot wins 15 of seeds 0..48 (31%).
+
+[[layer]]
+layer = 1
+slots = 4
+symbols = 6
+probe_budget = 8
+target = 5800
+
+[[layer]]
+layer = 2
+slots = 4
+symbols = 6
+probe_budget = 8
+target = 7000
+
+[[layer]]
+layer = 3
+slots = 4
+symbols = 6
+probe_budget = 8
+target = 8000
+
+[[layer]]
+layer = 4
+slots = 5
+symbols = 7
+probe_budget = 7
+target = 10000
+
+[[layer]]
+layer = 5
+slots = 5
+symbols = 7
+probe_budget = 7
+target = 11000
+
+[[layer]]
+layer = 6
+slots = 5
+symbols = 7
+probe_budget = 7
+target = 12000
+
+[[layer]]
+layer = 7
+slots = 6
+symbols = 8
+probe_budget = 7
+target = 15000
+
+[[layer]]
+layer = 8
+slots = 6
+symbols = 8
+probe_budget = 7
+target = 16000

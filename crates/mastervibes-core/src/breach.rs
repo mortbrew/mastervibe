@@ -11,7 +11,7 @@ use crate::catalog::Catalog;
 use crate::code::Code;
 use crate::layer::LayerSpec;
 use crate::pegs::{score_pegs, Pegs};
-use crate::scoring::{score_probe, ScoreBreakdown, ScoreHook};
+use crate::scoring::{score_probe_with_dead, ScoreBreakdown, ScoreHook};
 use crate::solver::{count_consistent, is_consistent, Observation, SolverError};
 
 /// Where a breach stands.
@@ -100,11 +100,28 @@ impl Breach {
     }
 
     /// Play `probe`. `hooks` are the tool effects active for this probe.
+    ///
+    /// No symbol is treated as already absent. [`Self::probe_with_dead`] is
+    /// the same call when the breach has shown some symbols absent.
     pub fn probe(
         &mut self,
         probe: &Code,
         catalog: &Catalog,
         hooks: &[&dyn ScoreHook],
+    ) -> Result<&Turn, BreachError> {
+        self.probe_with_dead(probe, catalog, hooks, 0)
+    }
+
+    /// [`Self::probe`], with symbols already shown to be absent.
+    ///
+    /// Bit `i` of `dead_mask` means symbol index `i` is dead. Playing one
+    /// wipes the signature and the peg payout for this probe.
+    pub fn probe_with_dead(
+        &mut self,
+        probe: &Code,
+        catalog: &Catalog,
+        hooks: &[&dyn ScoreHook],
+        dead_mask: u8,
     ) -> Result<&Turn, BreachError> {
         if self.status != BreachStatus::Open {
             return Err(BreachError::Closed);
@@ -119,7 +136,7 @@ impl Breach {
             return Err(BreachError::Charset);
         }
         let pegs = score_pegs(&self.secret, probe).expect("lengths were checked");
-        let score = score_probe(probe, pegs, catalog, Some(self.spec), hooks);
+        let score = score_probe_with_dead(probe, pegs, catalog, Some(self.spec), hooks, dead_mask);
         self.history.push(Turn {
             probe: *probe,
             pegs,
@@ -251,13 +268,13 @@ mod tests {
             amp: Amp::ZERO,
         };
         let hooks: [&dyn ScoreHook; 1] = [&spike];
-        // 0132 against 0123 is two hits and two nears, plus the +4 bit tool.
-        // bits = 10 signature + 5×2 hits + 2×2 nears + 4 tool = 28.
+        // 0132 against 0123 is two exacts and two nears, plus the +4 bit tool.
+        // bits = 10 signature + 10×2 exacts + 4×2 nears + 4 tool = 42.
         let turn = breach.probe(&code(6, "0132"), catalog, &hooks).unwrap();
         assert_eq!(turn.pegs.hits, 2);
         assert_eq!(turn.pegs.nears, 2);
         assert_eq!(turn.score.signature_id, "all_unique");
-        assert_eq!(turn.score.bits, 28);
+        assert_eq!(turn.score.bits, 42);
     }
 
     #[test]

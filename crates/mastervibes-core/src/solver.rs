@@ -137,6 +137,61 @@ fn enumerate(slots: usize, symbols: usize) -> Vec<Candidate> {
     out
 }
 
+/// Symbols that no longer fit, and how many codes still do.
+///
+/// `revealed[i] = Some(symbol)` forces slot `i`. Bit `i` of `forbidden` bans
+/// symbol `i`. The returned mask is every symbol index that appears in no
+/// remaining code (plus any forbidden bit). `possible` is the size of that set.
+pub(crate) fn knowledge(
+    slots: usize,
+    symbols: usize,
+    feedback: &[Observation],
+    revealed: &[Option<u8>],
+    forbidden: u8,
+) -> Result<(u8, u64), SolverError> {
+    let total = space(slots, symbols)?;
+    validate_feedback(slots, symbols, feedback)?;
+    if revealed.len() != slots {
+        return Err(SolverError::FeedbackLength);
+    }
+    let mut digits = [0u8; MAX_SLOTS];
+    let mut alive = 0u8;
+    let mut possible = 0u64;
+    for _ in 0..total {
+        if matches_constraints(&digits, slots, revealed, forbidden)
+            && fits(&digits[..slots], feedback)
+        {
+            possible += 1;
+            for &symbol in &digits[..slots] {
+                alive |= 1 << symbol;
+            }
+        }
+        bump(&mut digits, slots, symbols);
+    }
+    let universe = (1u16 << symbols) - 1;
+    let absent = u8::try_from(universe).unwrap_or(u8::MAX) & !alive;
+    Ok((absent | forbidden, possible))
+}
+
+fn matches_constraints(
+    digits: &[u8],
+    slots: usize,
+    revealed: &[Option<u8>],
+    forbidden: u8,
+) -> bool {
+    for slot in 0..slots {
+        if forbidden & (1 << digits[slot]) != 0 {
+            return false;
+        }
+        if let Some(symbol) = revealed[slot] {
+            if digits[slot] != symbol {
+                return false;
+            }
+        }
+    }
+    true
+}
+
 fn fits(candidate: &[u8], feedback: &[Observation]) -> bool {
     feedback
         .iter()
@@ -225,7 +280,7 @@ mod tests {
 
         let impossible = Observation {
             probe: code("0123"),
-            pegs: Pegs { hits: 3, nears: 1 },
+            pegs: Pegs::counts(3, 1),
         };
         assert_eq!(count_consistent(4, 6, &[impossible]).unwrap(), 0);
     }
@@ -271,7 +326,7 @@ mod tests {
             6,
             &[Observation {
                 probe: code("01234"),
-                pegs: Pegs { hits: 0, nears: 0 },
+                pegs: Pegs::counts(0, 0),
             }],
         );
         assert_eq!(err, Err(SolverError::FeedbackLength));
