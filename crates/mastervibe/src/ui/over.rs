@@ -1,6 +1,6 @@
 //! Win or loss. The seed and the run's stats.
 
-use mastervibes_core::{Phase, RunState};
+use mastervibe_core::{Phase, RunState};
 use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, Borders, Paragraph};
@@ -13,7 +13,7 @@ use super::theme::{self, screen};
 use super::{footer, frame_shell};
 
 pub fn draw(frame: &mut Frame, area: Rect, app: &App) {
-    let inner = frame_shell(frame, area, "mastervibes");
+    let inner = frame_shell(frame, area, "mastervibe");
     let Some(state) = app.state() else {
         return;
     };
@@ -45,7 +45,7 @@ fn draw_head(frame: &mut Frame, area: Rect, state: &RunState) {
     } else {
         theme::red()
     };
-    let seed = mastervibes_core::RunSeed::new(state.key, 1)
+    let seed = mastervibe_core::RunSeed::new(state.key, 1)
         .map(|seed| seed.to_string())
         .unwrap_or_default();
     let lines = vec![

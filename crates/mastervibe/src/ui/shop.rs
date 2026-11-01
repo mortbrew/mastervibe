@@ -1,6 +1,6 @@
 //! Two tool cards, the five slots, reroll, sell, and the next breach.
 
-use mastervibes_core::{RunState, ToolCard};
+use mastervibe_core::{RunState, ToolCard};
 use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, BorderType, Borders, Paragraph, Wrap};
@@ -13,7 +13,7 @@ use super::theme::{self, screen};
 use super::{footer, frame_shell};
 
 pub fn draw(frame: &mut Frame, area: Rect, app: &App) {
-    let inner = frame_shell(frame, area, "mastervibes");
+    let inner = frame_shell(frame, area, "mastervibe");
     let Some(state) = app.state() else {
         return;
     };
@@ -39,9 +39,9 @@ fn draw_head(frame: &mut Frame, area: Rect, state: &RunState) {
         .map(|shop| shop.reroll_cost)
         .unwrap_or(0);
     let next = match state.role {
-        mastervibes_core::BreachRole::Perimeter => "Internal",
-        mastervibes_core::BreachRole::Internal => "Root",
-        mastervibes_core::BreachRole::Root => "next layer",
+        mastervibe_core::BreachRole::Perimeter => "Internal",
+        mastervibe_core::BreachRole::Internal => "Root",
+        mastervibe_core::BreachRole::Root => "next layer",
     };
     let lines = vec![
         Line::from(vec![

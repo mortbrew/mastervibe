@@ -79,7 +79,7 @@ fn layer_shape(layer: &str) -> bool {
     chars.next().is_none() && (mark == 'L' || mark == 'l') && digit.is_ascii_digit()
 }
 
-/// A share string that is not a mastervibes seed.
+/// A share string that is not a mastervibe seed.
 #[derive(Debug, Error, PartialEq, Eq)]
 pub enum SeedError {
     /// The string was empty.

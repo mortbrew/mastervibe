@@ -1,22 +1,23 @@
 [package]
-name = "mastervibes"
+name = "mastervibe"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 authors.workspace = true
-description = "Terminal UI for the mastervibes code-breaking roguelike."
+repository.workspace = true
+description = "Terminal UI for the mastervibe code-breaking roguelike."
 publish = false
 
 [lib]
-name = "mastervibes"
+name = "mastervibe"
 path = "src/lib.rs"
 
 [[bin]]
-name = "mastervibes"
+name = "mastervibe"
 path = "src/main.rs"
 
 [dependencies]
-mastervibes-core = { path = "../mastervibes-core" }
+mastervibe-core = { path = "../mastervibe-core" }
 crossterm = "=0.28.1"
 ratatui = "=0.28.1"
 rand = "0.8.5"

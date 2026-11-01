@@ -97,7 +97,7 @@ pub(crate) fn centered(area: Rect, width: u16, height: u16) -> Rect {
 
 fn too_small(frame: &mut Frame, area: Rect) {
     let message = format!(
-        "mastervibes needs at least 80x24. this terminal is {}x{}.",
+        "mastervibe needs at least 80x24. this terminal is {}x{}.",
         area.width, area.height
     );
     frame.render_widget(Paragraph::new(message).style(theme::amber()), area);

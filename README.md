@@ -1,4 +1,4 @@
-# mastervibes
+# mastervibe
 
 A turn-based roguelike for the terminal, built on Mastermind code-breaking with a hacker theme.
 
@@ -10,11 +10,11 @@ This tree is v0.1.0: the rules core, and a terminal UI that drives it. The UI ne
 
 | Path | What it is |
 | --- | --- |
-| `crates/mastervibes-core` | Seeds, code generation, pegs, signatures, scoring, the run loop, tools, the shop |
-| `crates/mastervibes` | Terminal UI. It draws the run and calls the core |
-| `crates/mastervibes-core/data/signatures.toml` | Signature payouts and peg rates |
-| `crates/mastervibes-core/data/run.toml` | Layer budgets and targets, crack bonus, payouts, shop |
-| `crates/mastervibes-core/data/tools.toml` | The default-rig tool list |
+| `crates/mastervibe-core` | Seeds, code generation, pegs, signatures, scoring, the run loop, tools, the shop |
+| `crates/mastervibe` | Terminal UI. It draws the run and calls the core |
+| `crates/mastervibe-core/data/signatures.toml` | Signature payouts and peg rates |
+| `crates/mastervibe-core/data/run.toml` | Layer budgets and targets, crack bonus, payouts, shop |
+| `crates/mastervibe-core/data/tools.toml` | The default-rig tool list |
 
 The core crate does not depend on a terminal library. Signature numbers are loaded from TOML; the detectors that recognize a pattern stay in code.
 
@@ -53,7 +53,7 @@ Ascending means strictly increasing symbol indexes. A palindrome reads the same 
 ## Play
 
 ```bash
-cargo run -p mastervibes
+cargo run -p mastervibe
 ```
 
 The terminal needs at least 80×24. A new run draws a random seed. Enter a seed such as `MV-7F3A-9C21-L4` to replay that key. The layer in the seed is a share mark; the run still starts at layer 1.
@@ -65,7 +65,7 @@ Keys are on the footer. `q` asks before quitting. `?` explains pegs, signatures,
 ```bash
 cargo test
 cargo clippy -- -D warnings
-cargo run -p mastervibes
+cargo run -p mastervibe
 ```
 
 Licensed under MIT. See [LICENSE](LICENSE).

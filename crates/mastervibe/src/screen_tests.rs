@@ -4,7 +4,7 @@ use std::fs;
 use std::path::PathBuf;
 
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
-use mastervibes_core::Phase;
+use mastervibe_core::Phase;
 use unicode_width::UnicodeWidthStr;
 
 use crate::app::{App, Flow, Screen};
@@ -150,7 +150,7 @@ fn quit_asks_before_leaving() {
     let mut app = App::new();
     press(&mut app, 'q');
     let text = render_screen(&app, 80, 24);
-    assert!(text.contains("quit mastervibes"), "{text}");
+    assert!(text.contains("quit mastervibe"), "{text}");
     assert_eq!(press(&mut app, 'n'), Flow::Continue);
     assert!(!app.quit_confirm);
     press(&mut app, 'q');

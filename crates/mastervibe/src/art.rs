@@ -118,7 +118,7 @@ pub fn art_lines(name: &str) -> Option<[&'static str; 3]> {
 #[cfg(test)]
 mod tests {
     use super::art_lines;
-    use mastervibes_core::embedded_tools;
+    use mastervibe_core::embedded_tools;
     use unicode_width::UnicodeWidthStr;
 
     #[test]

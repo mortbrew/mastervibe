@@ -1,6 +1,6 @@
-//! Playable terminal for mastervibes.
+//! Playable terminal for mastervibe.
 //!
-//! The rules stay in `mastervibes_core`. This binary draws the run and sends
+//! The rules stay in `mastervibe_core`. This binary draws the run and sends
 //! keypresses back through `Run`.
 
 use std::io::{self, stdout, IsTerminal};
@@ -12,13 +12,13 @@ use crossterm::execute;
 use crossterm::terminal::{
     disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen,
 };
-use mastervibes::{draw, App, Flow};
+use mastervibe::{draw, App, Flow};
 use ratatui::backend::CrosstermBackend;
 use ratatui::Terminal;
 
 fn main() -> io::Result<()> {
     if !stdout().is_terminal() {
-        eprintln!("mastervibes needs a terminal.");
+        eprintln!("mastervibe needs a terminal.");
         std::process::exit(1);
     }
     let mut app = App::new();

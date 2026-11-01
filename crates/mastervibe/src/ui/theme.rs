@@ -1,6 +1,6 @@
 //! Green and amber on black. Named ANSI colors, so a 16-colour terminal still reads.
 
-use mastervibes_core::{BreachRole, Rarity};
+use mastervibe_core::{BreachRole, Rarity};
 use ratatui::style::{Color, Modifier, Style};
 
 pub fn screen() -> Style {

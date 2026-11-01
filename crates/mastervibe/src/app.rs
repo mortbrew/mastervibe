@@ -4,7 +4,7 @@ use std::collections::BTreeMap;
 use std::time::Instant;
 
 use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
-use mastervibes_core::{
+use mastervibe_core::{
     BreachStatus, Charset, Code, Phase, Run, RunError, RunSeed, RunState, Symbol, Turn, LAYER_COUNT,
 };
 
@@ -88,11 +88,11 @@ pub struct ScoreMoment {
     /// Rows, in pipeline order. The base amp is not a row.
     pub steps: Vec<ScoreStep>,
     /// Amp the pipeline started from.
-    pub base_amp: mastervibes_core::Amp,
+    pub base_amp: mastervibe_core::Amp,
     /// Final bits from the core.
     pub final_bits: i32,
     /// Final amp from the core.
-    pub final_amp: mastervibes_core::Amp,
+    pub final_amp: mastervibe_core::Amp,
     /// Final `bits × amp` in thousandths.
     pub final_milli: i64,
     /// Time since the probe landed.

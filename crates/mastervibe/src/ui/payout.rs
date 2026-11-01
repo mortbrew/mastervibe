@@ -1,6 +1,6 @@
 //! Breach total and the dollars it paid.
 
-use mastervibes_core::{Amp, BreachRole, BreachStatus, Phase, RunState};
+use mastervibe_core::{Amp, BreachRole, BreachStatus, Phase, RunState};
 use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, Borders, Paragraph};
@@ -13,7 +13,7 @@ use super::theme::{self, screen};
 use super::{footer, frame_shell};
 
 pub fn draw(frame: &mut Frame, area: Rect, app: &App) {
-    let inner = frame_shell(frame, area, "mastervibes");
+    let inner = frame_shell(frame, area, "mastervibe");
     let Some(state) = app.state() else {
         return;
     };

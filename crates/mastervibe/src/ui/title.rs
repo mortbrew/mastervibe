@@ -12,15 +12,15 @@ use super::theme::{self, screen};
 use super::{footer, frame_shell};
 
 const LOGO: [&str; 5] = [
-    r#"#   #  ###   #### ##### ##### ####  #   # ##### ####  #####  ####"#,
-    r#"## ## #   # #       #   #     #   # #   #   #   #   # #     #    "#,
-    r#"# # # #####  ###    #   ####  ####  #   #   #   ####  ####   ### "#,
-    r#"#   # #   #     #   #   #     # #    # #    #   #   # #         #"#,
-    r#"#   # #   # ####    #   ##### #  #    #   ##### ####  ##### #### "#,
+    r#"#   #  ###   #### ##### ##### ####  #   # ##### ####  #####"#,
+    r#"## ## #   # #       #   #     #   # #   #   #   #   # #    "#,
+    r#"# # # #####  ###    #   ####  ####  #   #   #   ####  #### "#,
+    r#"#   # #   #     #   #   #     # #    # #    #   #   # #    "#,
+    r#"#   # #   # ####    #   ##### #  #    #   ##### ####  #####"#,
 ];
 
 pub fn draw(frame: &mut Frame, area: Rect, app: &App) {
-    let inner = frame_shell(frame, area, "mastervibes");
+    let inner = frame_shell(frame, area, "mastervibe");
     let [logo, menu, hint] = Layout::vertical([
         Constraint::Length(7),
         Constraint::Length(8),

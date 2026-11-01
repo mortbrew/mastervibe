@@ -4,7 +4,7 @@
 //! pay before pegs, and walks a finished [`ScoreBreakdown`] into lines the
 //! scoring screen can reveal one at a time.
 
-use mastervibes_core::{
+use mastervibe_core::{
     embedded_catalog, embedded_tools, Amp, Code, ScoreBreakdown, ScoreLineKind, Symbol, GLYPHS,
 };
 use unicode_width::{UnicodeWidthChar, UnicodeWidthStr};
@@ -290,7 +290,7 @@ fn group_thousands(value: u64) -> String {
 #[cfg(test)]
 mod tests {
     use super::{build_steps, format_pegs, format_points, preview};
-    use mastervibes_core::{
+    use mastervibe_core::{
         score_probe, score_probe_with_dead, Amp, Charset, Code, ScoreHook, Symbol, ToolMod,
     };
 
@@ -347,10 +347,10 @@ mod tests {
 
     #[test]
     fn steps_land_on_the_scored_totals() {
-        let catalog = mastervibes_core::embedded_catalog();
+        let catalog = mastervibe_core::embedded_catalog();
         let score = score_probe(
             &code("0012"),
-            mastervibes_core::Pegs {
+            mastervibe_core::Pegs {
                 hits: 2,
                 nears: 1,
                 exact_mask: 0b0011,
@@ -371,10 +371,10 @@ mod tests {
 
     #[test]
     fn a_wiped_probe_steps_through_absent_symbol() {
-        let catalog = mastervibes_core::embedded_catalog();
+        let catalog = mastervibe_core::embedded_catalog();
         let score = score_probe_with_dead(
             &code("0000"),
-            mastervibes_core::Pegs::counts(0, 0),
+            mastervibe_core::Pegs::counts(0, 0),
             catalog,
             None,
             &[],
@@ -390,7 +390,7 @@ mod tests {
 
     #[test]
     fn clamp_steps_match_a_negative_tool() {
-        let catalog = mastervibes_core::embedded_catalog();
+        let catalog = mastervibe_core::embedded_catalog();
         let sink = ToolMod {
             id: "sink".to_string(),
             bits: -10_000,
@@ -399,7 +399,7 @@ mod tests {
         let hooks: [&dyn ScoreHook; 1] = [&sink];
         let score = score_probe(
             &code("0132"),
-            mastervibes_core::Pegs::counts(0, 0),
+            mastervibe_core::Pegs::counts(0, 0),
             catalog,
             None,
             &hooks,

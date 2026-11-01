@@ -1,6 +1,6 @@
 //! Bits × amp, one row at a time. Any key skips. It moves on by itself.
 
-use mastervibes_core::Amp;
+use mastervibe_core::Amp;
 use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::text::{Line, Span};
 use ratatui::widgets::Paragraph;
@@ -13,7 +13,7 @@ use super::theme::{self, screen};
 use super::{footer, frame_shell};
 
 pub fn draw(frame: &mut Frame, area: Rect, app: &App) {
-    let inner = frame_shell(frame, area, "mastervibes");
+    let inner = frame_shell(frame, area, "mastervibe");
     let Some(moment) = app.moment.as_ref() else {
         frame.render_widget(Paragraph::new("scoring").style(screen()), inner);
         return;

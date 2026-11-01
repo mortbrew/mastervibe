@@ -1,12 +1,13 @@
 [workspace]
 resolver = "2"
-members = ["crates/mastervibes-core", "crates/mastervibes"]
+members = ["crates/mastervibe-core", "crates/mastervibe"]
 
 [workspace.package]
 version = "0.1.0"
 edition = "2021"
 license = "MIT"
 authors = ["Toby J."]
+repository = "https://github.com/mortbrew/mastervibe"
 
 [workspace.lints.rust]
 unsafe_code = "forbid"

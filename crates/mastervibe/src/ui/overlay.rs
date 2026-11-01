@@ -36,7 +36,7 @@ pub fn help(frame: &mut Frame, area: Rect) {
 
 pub fn quit(frame: &mut Frame, area: Rect) {
     let lines = vec![
-        Line::from("quit mastervibes?"),
+        Line::from("quit mastervibe?"),
         Line::from(""),
         Line::from(vec![
             Span::styled("[y]", theme::amber()),

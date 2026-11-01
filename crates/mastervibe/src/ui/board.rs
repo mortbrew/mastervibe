@@ -2,7 +2,7 @@
 
 use std::collections::HashSet;
 
-use mastervibes_core::{BreachState, RunState, Symbol, Turn};
+use mastervibe_core::{BreachState, RunState, Symbol, Turn};
 use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::style::Modifier;
 use ratatui::text::{Line, Span};
@@ -18,7 +18,7 @@ use super::theme::{self, screen};
 use super::{footer, frame_shell};
 
 pub fn draw(frame: &mut Frame, area: Rect, app: &App) {
-    let inner = frame_shell(frame, area, "mastervibes");
+    let inner = frame_shell(frame, area, "mastervibe");
     let Some(state) = app.state() else {
         frame.render_widget(Paragraph::new("no run").style(theme::amber()), inner);
         return;
@@ -58,7 +58,7 @@ pub fn draw(frame: &mut Frame, area: Rect, app: &App) {
 }
 
 fn draw_header(frame: &mut Frame, area: Rect, state: &RunState, status: &str) {
-    let seed = mastervibes_core::RunSeed::new(state.key, state.layer)
+    let seed = mastervibe_core::RunSeed::new(state.key, state.layer)
         .map(|seed| seed.to_string())
         .unwrap_or_default();
     let left = state
@@ -301,7 +301,7 @@ fn draw_symbols(frame: &mut Frame, area: Rect, state: &RunState) {
         Span::styled("  + near", theme::amber()),
         Span::styled("   pool ", theme::dim()),
     ];
-    if let Ok(charset) = mastervibes_core::Charset::new(state.symbols) {
+    if let Ok(charset) = mastervibe_core::Charset::new(state.symbols) {
         for (index, ch) in charset.glyphs().chars().enumerate() {
             let style = if dead.contains(&(index as u8)) {
                 theme::dim()
@@ -340,7 +340,7 @@ fn draw_slot(
     frame: &mut Frame,
     area: Rect,
     index: usize,
-    tool: Option<&mastervibes_core::ToolCard>,
+    tool: Option<&mastervibe_core::ToolCard>,
 ) {
     let Some(tool) = tool else {
         frame.render_widget(

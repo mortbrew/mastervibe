@@ -1,4 +1,4 @@
-//! Rules core for mastervibes, a code-breaking roguelike.
+//! Rules core for mastervibe, a code-breaking roguelike.
 //!
 //! A **probe** is a guess. **Pegs** are the feedback: a **hit** is the right
 //! symbol in the right slot, a **near** is the right symbol in the wrong slot.
@@ -10,14 +10,14 @@
 //! This crate is pure logic. It does not read the terminal.
 //!
 //! ```
-//! use mastervibes_core::{generate_secret, RunSeed};
+//! use mastervibe_core::{generate_secret, RunSeed};
 //!
 //! let seed = RunSeed::parse("MV-7F3A-9C21-L4")?;
 //! let secret = generate_secret(seed);
 //! assert!(secret.fair);
 //! assert_eq!(secret.spec.layer(), 4);
 //! assert_eq!(seed.to_string(), "MV-7F3A-9C21-L4");
-//! # Ok::<(), mastervibes_core::SeedError>(())
+//! # Ok::<(), mastervibe_core::SeedError>(())
 //! ```
 
 #![forbid(unsafe_code)]

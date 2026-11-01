@@ -1,6 +1,6 @@
-//! Terminal UI for mastervibes.
+//! Terminal UI for mastervibe.
 //!
-//! The rules live in [`mastervibes_core`]. This crate draws the run and sends
+//! The rules live in [`mastervibe_core`]. This crate draws the run and sends
 //! probes, buys, sells, rerolls, and advances back through [`Run`]. It never
 //! reads the secret.
 
