@@ -1,0 +1,84 @@
+# Probe signatures and the bits × amp rates.
+#
+# A probe earns one signature: the matching row with the highest priority.
+# Which patterns match is decided in code. Every number in this file is data,
+# so a later pass can retune payouts without touching the detectors.
+#
+# `amp` on a signature is a bonus added to [scoring].base_amp (All Unique's
+# "+0" means the multiplier stays at the base). Score = bits × amp.
+
+[scoring]
+base_amp = 1.0
+# Each hit is a cracked slot. 0.25 amp × 4 hits is a full extra multiplier.
+hit_bits = 5
+hit_amp = 0.25
+near_bits = 2
+near_amp = 0.0
+
+# Frequency patterns, common to rare, then the shape patterns inserted where
+# their payout sits. Priorities are unique so detection has no ties.
+
+[[signature]]
+id = "all_unique"
+name = "All Unique"
+bits = 10
+amp = 0.0
+priority = 10
+
+[[signature]]
+id = "pair"
+name = "Pair"
+bits = 15
+amp = 1.0
+priority = 20
+
+[[signature]]
+id = "ascending"
+name = "Ascending"
+bits = 20
+amp = 1.0
+priority = 30
+
+[[signature]]
+id = "two_pair"
+name = "Two Pair"
+bits = 25
+amp = 1.5
+priority = 40
+
+# Outranks Two Pair so a 4-slot ABBA reads as Palindrome, not only Two Pair.
+# Mono and every stronger frequency pattern still outrank it.
+[[signature]]
+id = "palindrome"
+name = "Palindrome"
+bits = 28
+amp = 1.5
+priority = 50
+
+[[signature]]
+id = "triple"
+name = "Triple"
+bits = 30
+amp = 2.0
+priority = 60
+
+[[signature]]
+id = "full_lock"
+name = "Full Lock"
+bits = 40
+amp = 2.5
+priority = 70
+
+[[signature]]
+id = "quad"
+name = "Quad"
+bits = 50
+amp = 3.0
+priority = 80
+
+[[signature]]
+id = "mono"
+name = "Mono"
+bits = 60
+amp = 4.0
+priority = 90
