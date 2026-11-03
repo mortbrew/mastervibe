@@ -1,61 +1,43 @@
-# mastervibes
+# ./trace
 
-A turn-based roguelike for the terminal, built on Mastermind code-breaking with a hacker theme.
+A terminal roguelike. You are jacked in through a chain of proxies, and a trace is walking toward you one hop at a time. Each turn you get 3 cycles to move through a file tree, siphon chunks, decrypt locks, wipe logs, and bounce or burn proxies. The sysadmin's next card is always face up, and the ▼ marker shows exactly where the trace will land. Jack out before it reaches `@you`.
 
-You probe a hidden code. Pegs tell you which symbols are exact and which are only near. The shape of your probe — a pair, a palindrome, a full lock — is its signature, and that signature is what pays. Points are bits times amp. A run is eight layers of three breaches each. Tools from the shop change what a probe is worth and what you know before you guess.
+This tree replaces the old Mastermind rules core. The slice you can play is layer 1: a 7-step practice breach with `mentor@localhost`, two shops, breach 2, and the boss **THE PARENT**. Clearing it ends on a layer-cleared screen.
 
-This tree is the v0.1.0 rules core: a library with no UI, plus a stub binary. The terminal comes in a later step.
-
-## Layout
-
-| Path | What it is |
-| --- | --- |
-| `crates/mastervibes-core` | Seeds, code generation, pegs, signatures, scoring, the run loop, tools, the shop |
-| `crates/mastervibes` | Binary stub. It links the core and prints one example secret |
-| `crates/mastervibes-core/data/signatures.toml` | Signature payouts and peg rates |
-| `crates/mastervibes-core/data/run.toml` | Layer budgets and targets, crack bonus, payouts, shop |
-| `crates/mastervibes-core/data/tools.toml` | The default-rig tool list |
-
-The core crate does not depend on a terminal library. Signature numbers are loaded from TOML; the detectors that recognize a pattern stay in code.
-
-## Rules
-
-**Layers.** 1–3 use 4 slots and 6 symbols with 8 probes. 4–6 use 5 slots and 7 symbols with 7 probes. 7–8 use 6 slots and 8 symbols with 7 probes. The charset is the hex prefix `01234567`, cut to the layer's symbol count. Repeats are allowed in a code.
-
-**Seeds.** A share code looks like `MV-7F3A-9C21-L4`: a 32-bit key and a layer. Each layer is its own `rand_pcg` stream, `Pcg32` seeded from `(key << 8) | layer`, so that string reproduces one secret without replaying earlier layers. The same seed always yields the same code.
-
-**Pegs.** Standard Mastermind scoring. Hits are matched first; a symbol already used as a hit is not reused as a near, and duplicate symbols are matched one-to-one.
-
-**Signatures.** A probe earns one signature, the matching pattern with the highest `bits × (1 + amp)`. Priority is only the tie-break. The stock payouts:
-
-| Signature | Bits | Amp bonus |
-| --- | --- | --- |
-| All Unique | 10 | +0 |
-| Pair | 15 | +1 |
-| Ascending | 20 | +1 |
-| Two Pair | 25 | +1.5 |
-| Palindrome | 28 | +1.5 |
-| Triple | 30 | +2 |
-| Full Lock | 40 | +2.5 |
-| Quad | 50 | +3 |
-| Mono | 60 | +4 |
-
-Amp starts at 1, then the signature bonus, then pegs: 10 bits per exact, 4 bits per near, and +1 amp for each pair of side-by-side exacts. A symbol already shown to be absent wipes that probe's signature and pegs (the score is 0 before tools). Score is `bits × amp`, stored in thousandths so the halves stay exact. Tool ×amp effects multiply together and cap at ×4.
-
-**Run.** Eight layers, three breaches each: Perimeter, Internal, Root. The three breach scores add up. If that total is under the layer target when Root ends, the run is over. Clearing layer 8 wins. A cracked breach scores `probe total × (1 + 0.3 per unused probe)`, capped at ×5. Extra probes from tools do not count as unused. An uncracked breach keeps half its probe score and the run continues. You start with $4. Clearing a breach pays $5 / $6 / $7, plus $1 per probe under par (par is the slot count), plus $2 for each extra time the layer score covers the target (max +$3, paid on Root). Then interest: $1 per $5 held, max $5.
-
-**Shop.** After every breach that does not end the run: 2 tool cards, a reroll for $5 (and $1 more each further reroll in that shop), selling for half price. The rig holds 5 tools. The 21 tools are the default-rig slice of the catalog (Recon, Speed, Grind, Pegs, Symbols, Economy, Wild). Same seed, same choices, same shop.
-
-Ascending means strictly increasing symbol indexes. A palindrome reads the same forwards and backwards and outranks Two Pair, so a four-slot `ABBA` pays as a palindrome. Two Pair is at least two pairs, so three pairs still counts. Full Lock is a triple plus a pair. Triple is a three-of-a-kind with no pair, which is also where two triples land. Quad is four or more of one symbol without filling every slot. Mono is every slot the same.
-
-**Fairness.** A drawn secret is thrown back onto the same PRNG stream when one symbol appears more than twice, or when the built-in solver cannot crack it inside the probe budget. The solver always guesses the lexicographically smallest code still consistent with the pegs. `count_consistent` answers how many secrets still fit the feedback so far.
-
-## Develop
+## Run
 
 ```bash
-cargo test
-cargo clippy -- -D warnings
-cargo run -p mastervibes
+cargo run --release
 ```
 
-Licensed under MIT. See [LICENSE](LICENSE).
+The binary is `trace`. A seed can be forced:
+
+```bash
+cargo run --release -- --seed TRAC-7F3A-C0DE
+```
+
+`cargo test` and `cargo clippy --all-targets -- -D warnings` cover the rules, a headless L1 balance sim, and rendered screens at 154×44 and 120×40.
+
+There is no audio device required. If ALSA cannot open a playback device, music and effects stay silent and the game continues. Volumes, the colourblind palettes, and the mouse toggle live on the Options screen and are written to `~/.config/trace` (or `$TRACE_HOME` if that is set).
+
+## Keys
+
+| Key | Action |
+| --- | --- |
+| `j` / `k` | Move the cursor |
+| `l` or enter | `cd` in (1 cycle) |
+| `h` | `cd ..` (1 cycle) |
+| `s` | Siphon one chunk (1 cycle) |
+| `d` | Decrypt a locked folder (1 cycle) |
+| `w` | Wipe a LOG, the trace steps back (1 cycle) |
+| `b` | Bounce: add a proxy (2 cycles) |
+| `x` | Burn a proxy, the trace jumps back 2 (2 cycles) |
+| space | End the turn |
+| `q` | Jack out and bank bits × amp |
+| `!` then `1`/`2` | Run a one-use script from `~/bin` |
+| tab | Inspect the focused card |
+| `?` | Key reference |
+
+Arrows work as well. In the shop, `1`–`6` buy, `r` rerolls, `v` sells, and enter leaves. The mouse hovers a card to inspect it and clicks a folder to `cd`.
+
+Score is bits × amp. A traced jack-out keeps half. Missing the breach target ends the run. The tutorial cannot fail, and it can be skipped with escape.

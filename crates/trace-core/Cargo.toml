@@ -1,0 +1,16 @@
+[package]
+name = "trace-core"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "Rules for the ./trace terminal roguelike."
+publish = false
+
+[dependencies]
+rand = "0.8.5"
+serde = { version = "1.0.210", features = ["derive"] }
+serde_json = "1.0.128"
+
+[lints]
+workspace = true
